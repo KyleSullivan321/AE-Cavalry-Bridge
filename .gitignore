@@ -34,3 +34,15 @@ Thumbs.db
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+
+# Cavalry's own Web Player files - not redistributed here, see extension/lib/README.md
+extension/lib/wasm-lib/
+extension/lib/webcodec-helper.js
+extension/lib/mp4box.all.js
+extension/lib/CavalryPlayer.js
+
+# Signing
+*.zxp
+*.p12
+ZXPSignCmd*
+extension/.debug

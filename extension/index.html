@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Cavalry Bridge</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; font: 12px/1.4 system-ui, sans-serif; background: #232323; color: #ccc; }
+  #wrap { padding: 10px; display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 20px); }
+  button { background: #3a3a3a; color: #eee; border: 1px solid #555; border-radius: 3px; padding: 6px 10px; cursor: pointer; }
+  button:hover:not(:disabled) { background: #474747; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button.primary { background: #2d6cdf; border-color: #2d6cdf; }
+  .row { display: flex; gap: 6px; align-items: center; }
+  .row > .grow { flex: 1; }
+  #scenePath { font-size: 11px; color: #9a9a9a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #preview { background: #111; border: 1px solid #444; width: 100%; aspect-ratio: 16/9; object-fit: contain; }
+  #status { font-size: 11px; color: #8ab; min-height: 14px; }
+  #log { flex: 1; overflow: auto; background: #1a1a1a; border: 1px solid #333; border-radius: 3px;
+         padding: 6px; font-family: monospace; font-size: 10px; white-space: pre-wrap; color: #888; }
+  label.chk { display: flex; gap: 6px; align-items: center; user-select: none; }
+  .err { color: #e57; }
+  .hint { font-size: 10px; color: #888; font-style: italic; margin-top: -2px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div class="row">
+    <button id="pick">Open .cv…</button>
+    <span id="scenePath" class="grow">No scene loaded</span>
+  </div>
+  <div class="row" id="compRow" style="display:none">
+    <label class="chk grow">Composition
+      <select id="comp" class="grow"></select>
+    </label>
+  </div>
+  <canvas id="preview"></canvas>
+  <div id="status"></div>
+  <div class="row">
+    <button id="bake" class="primary" disabled title="Render the current Cavalry composition and import it into After Effects.">Bake → AE layer</button>
+    <label class="chk" title="Watches the saved .cv file. You must SAVE in Cavalry (Ctrl/Cmd+S) for changes to be picked up.">
+      <input type="checkbox" id="auto" disabled> Auto-bake on change
+    </label>
+  </div>
+  <div class="hint">💾 Save your Cavalry file (Ctrl/Cmd+S) — the panel only sees saved changes.</div>
+  <div class="row">
+    <button id="importLayers" title="Rebuild the ACTIVE Cavalry composition in After Effects as editable layers (shapes, text, footage, groups + transforms, keyframes & easing). Procedural layers (duplicators, deformers, fields…) have no AE equivalent and are reported as skipped — use Bake for those. Requires the Cavalry importer script to be running.">Import Cavalry layers → AE</button>
+  </div>
+  <hr style="border:0;border-top:1px solid #3a3a3a;width:100%;margin:4px 0">
+  <div class="row">
+    <button id="sendComp" title="Render the active AE composition and send it to Cavalry as a flat image sequence (footage).">Send AE comp → Cavalry (img seq)</button>
+    <button id="sendAsset" title="Send the image/video files of selected footage — from the Project panel or footage layers in a comp. Shape/adjustment/text/solid layers are ignored.">Send image/video → Cavalry</button>
+  </div>
+  <div class="row">
+    <button id="sendStructure" title="Rebuild the active AE comp in Cavalry as editable layers (footage, text, solids, basic shapes + transforms & keyframes). Effects, expressions, custom paths and masks are not transferred.">Send comp layers → Cavalry</button>
+  </div>
+  <!-- log kept in DOM for diagnostics but hidden from the user -->
+  <div id="log" style="display:none"></div>
+</div>
+<script src="lib/CSInterface.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

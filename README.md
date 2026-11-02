@@ -1,176 +1,53 @@
-# Claude Vibe-Coding Starter Template
+﻿# Cavalry Bridge
 
-A general-purpose, stack-agnostic base structure for starting projects with Claude
-Code. It bakes in two proven disciplines — **write less code** and **think before
-coding, verify after** — as on-demand skills, agents, commands, and hooks, so every
-new project starts fast without re-deriving the setup each time.
+Move work between **After Effects** and **[Cavalry](https://cavalry.studio)** without the
+render/export/import round-trip - as *editable layers* in both directions, keyframes and
+easing included.
 
-## Starting a new project (cleanest path)
+It has two parts, and both run on the same machine:
 
-This template lives at **[KyleSullivan321/Claude-Starter](https://github.com/KyleSullivan321/Claude-Starter)**,
-marked as a GitHub *template repository* so new projects start with their own fresh
-git history — no template history or leftover remote to clean up.
+- `extension/` - a CEP panel for After Effects (**Window > Extensions > Cavalry Bridge**).
+- `cavalry/bridge-importer.js` - a script for Cavalry that runs a small local server (port 8090) the panel talks to.
 
-**Easiest — use the helper script** (wraps the GitHub template path, with an offline
-local-copy fallback; handles `chmod`, `git init`, and the first commit for you):
+## What it does
 
-```powershell
-./new-project.ps1 my-app                 # Windows / PowerShell
-```
-```bash
-./new-project.sh my-app                  # Git Bash / macOS / Linux
-./new-project.sh my-app ~/work --local   # force offline local copy
-```
+**Cavalry -> After Effects**
+- **Bake -> AE layer** - the panel embeds Cavalry's Web Player (WebAssembly), renders your `.cv` to a PNG sequence and imports it. Pixel-accurate. With *Auto-bake on change*, every save in Cavalry refreshes the AE comp.
+- **Import Cavalry layers** - rebuilds the active Cavalry comp as editable AE layers: shapes, text, footage, groups (as nulls, parenting kept), transforms, keyframes and easing, including custom curves. Procedural layers (duplicators, staggers, deformers...) have no AE equivalent and are skipped - use Bake for those.
 
-**Or by hand:**
+**After Effects -> Cavalry** (needs the Cavalry script running)
+- **Send AE comp -> Cavalry (img seq)** - flat render, loaded as footage.
+- **Send comp layers -> Cavalry** - editable footage, text, solids, ellipses/rectangles with transforms and keyframe easing. Effects, expressions, masks, mattes, blend modes and layer styles are dropped (listed in the panel).
+- **Send image/video -> Cavalry** - selected footage.
 
-```bash
-# GitHub template (cleanest — fresh history, needs the gh CLI):
-gh repo create my-app --template KyleSullivan321/Claude-Starter --private --clone
+> Bake is a *bake bridge*, not a real-time link: Cavalry exposes no per-frame render API to AE. Only **saved** Cavalry changes are picked up.
 
-# No gh / offline — degit-style copy with no history, then init your own:
-npx degit KyleSullivan321/Claude-Starter my-app && cd my-app && git init
-```
+## Setup
 
-> Avoid a plain `git clone` of the template — it drags the template's history and
-> `origin` along, so you'd have to `rm -rf .git && git init` every time. The template
-> repo and the script avoid that entirely.
+Requires After Effects 2024-2026 and Cavalry 2.5+ on Windows or macOS.
 
-**Then, in the new project:**
+1. **Get Cavalry's Web Player files.** They are not redistributed in this repo - follow [extension/lib/README.md](extension/lib/README.md).
+2. **Allow unsigned CEP extensions (one time).**
+   - Windows: add a String value `PlayerDebugMode` = `1` under `HKCU\Software\Adobe\CSXS.12` (and `CSXS.11` for older AE).
+   - macOS: `defaults write com.adobe.CSXS.12 PlayerDebugMode 1` (and `.11`).
+3. **Install the panel.** Copy `extension/` to
+   - Windows: `%APPDATA%\Adobe\CEP\extensions\studio.bridge.cavalry` (or run `tools/redeploy.ps1`)
+   - macOS: `~/Library/Application Support/Adobe/CEP/extensions/studio.bridge.cavalry`
 
-1. **Fill in `CLAUDE.md`** — `Project specifics`, `Conventions`, `Gotchas`. Delete
-   placeholders you don't need.
-2. **Prune what you won't use.** Everything here is opt-in. Delete any skill, agent,
-   command, rule, or hook that doesn't fit. Smaller is better.
-3. **Start coding.** For a new feature: `/spec` → review the spec → fresh session →
-   `/plan` → implement → `/ship`.
+   Restart After Effects, then open **Window > Extensions > Cavalry Bridge**.
+4. **Install the Cavalry script** (only for AE -> Cavalry and *Import Cavalry layers*). In Cavalry: **Help > Show Scripts Folder**, copy a `cavalry-bridge` folder containing `bridge-importer.js` there, then run it from **Window > Scripts**. Keep its panel open, and run it again each time Cavalry starts.
 
-> The helper script re-runs `chmod +x .claude/hooks/*.sh`, because the executable bit
-> is lost through GitHub-template/degit copies on Windows. If you start by hand, run
-> that once yourself. `settings.local.json` is gitignored and intentionally does not
-> travel — each person regenerates their own local overrides.
+## Building a signed ZXP
 
-## What's in here
+`packaging/build-zxp.sh` stages `extension/` and signs it with Adobe's free
+[ZXPSignCmd](https://github.com/Adobe-CEP/CEP-Resources/tree/master/ZXPSignCMD). A self-signed
+certificate is generated on first run and is git-ignored - never commit certificates.
 
-```
-.
-├── CLAUDE.md            # Lean project memory (loaded every session)
-├── AGENTS.md            # Same rules, portable to non-Claude agents
-├── SPEC.template.md     # Interview-driven spec starter
-├── .env.example         # Copy to .env (gitignored)
-├── .gitignore
-└── .claude/
-    ├── settings.json    # Permission allowlist + hook wiring (committed)
-    ├── settings.local.json  # Your personal overrides (gitignored)
-    ├── agents/          # Subagents — isolated context, fresh-eyes review
-    ├── commands/        # Slash commands — repeatable workflows
-    ├── skills/          # On-demand knowledge that won't bloat context
-    ├── rules/           # Modular, path-scoped team instructions
-    └── hooks/           # Deterministic guarantees (block secrets, etc.)
-```
+## Limits
 
-## Memory: how context persists across sessions
+One Cavalry scene <-> one AE comp at a time; both apps on one machine; H.264 for video footage.
 
-You don't re-explain the project every session. Three layers carry knowledge
-forward, and the template uses all three:
+## License
 
-| Layer | Who writes it | Committed? | Loaded |
-|-------|---------------|-----------|--------|
-| **`CLAUDE.md`** | You | ✅ shared | In full, every session — keep it lean |
-| **`.claude/rules/`** | You | ✅ shared | Always, or only when matching files are touched (path-scoped) |
-| **Auto memory** | Claude, automatically | ❌ private, machine-local | `MEMORY.md` index every session; topic files on demand |
-
-**Auto memory** is the native feature that stops you re-contextualizing. It's **on by
-default** (and set explicitly in `settings.json`). As Claude works it saves its own
-notes — build quirks, debugging insights, preferences it discovers — to
-`~/.claude/projects/<project>/memory/`. A concise `MEMORY.md` index auto-loads each
-session; detailed topic files load only when needed. Browse or edit it with
-`/memory`.
-
-Two things to know for a **template**:
-- Auto memory is keyed to the git repo and lives under `~/.claude/`, so it is **not**
-  copied when you copy this folder — each new project gets its own clean memory. ✅
-- It's **private and per-machine** — never committed or shared. Anything the *team*
-  needs to persist goes in `CLAUDE.md` or `.claude/rules/` instead.
-
-**Decision rule:** team-shared and stable → `CLAUDE.md` or `.claude/rules/`; private,
-discovered-as-you-go → let auto memory handle it. When you correct the same thing
-twice, promote it to the right shared layer.
-
-
-
-### Skills (`.claude/skills/`)
-
-Loaded on demand, so they don't cost context every session. Auto-trigger on
-relevant work or invoke with `/<name>`.
-
-| Skill | What it does |
-|-------|--------------|
-| `lazy-senior-dev` | The decision hierarchy — write the least code possible (YAGNI → stdlib → platform → installed dep → one line → minimal). |
-| `think-before-coding` | Surface assumptions, present interpretations, push back before coding. |
-| `surgical-changes` | Minimal-diff discipline — touch only what you must, match existing style. |
-| `verification-loop` | Define a runnable success criterion and loop until it passes; show evidence. |
-
-### Commands (`.claude/commands/`)
-
-| Command | What it does |
-|---------|--------------|
-| `/spec` | Interview you about a feature, then write a self-contained `SPEC.md`. |
-| `/plan` | Explore-first: read the relevant code, then produce an implementation plan. |
-| `/review` | Fresh-context, severity-rated review of the current diff (bugs + simplification). |
-| `/ship` | Verify (test/build/lint) → commit with a good message → open a PR. |
-| `/cleanup` | Anti-slop pass: simplify, delete dead code, tighten the diff. |
-
-### Agents (`.claude/agents/`)
-
-Run in isolated context. The reviewer/verifier agents see only the diff and
-criteria — they don't inherit the reasoning that wrote the code, which is the point.
-
-| Agent | Role |
-|-------|------|
-| `planner` | Explore the codebase and design an implementation plan (read-heavy, no edits). |
-| `code-reviewer` | Severity-rated review: logic defects, edge cases, simplification opportunities. |
-| `security-reviewer` | OWASP Top 10, secrets, unsafe patterns. |
-| `verifier` | Evidence-based completion check — did the work actually meet its criteria? |
-
-### Hooks (`.claude/hooks/`)
-
-Deterministic — they run regardless of what the model decides.
-
-- `block-sensitive-files.sh` — blocks writes to `.env`, secret files, and lockfiles.
-  Wired in `settings.json` under `hooks.PreToolUse`.
-- See `.claude/hooks/README.md` to add auto-format / auto-lint on edit.
-
-## The core workflow
-
-```
-/spec  →  (review spec)  →  fresh session  →  /plan  →  implement  →  /ship
-                                                  ↑                     │
-                                                  └──── /review ────────┘
-```
-
-The single highest-leverage habit: **give Claude a check it can run itself** (tests,
-build, screenshot) so it closes its own loop instead of waiting for you to catch
-mistakes.
-
-## Optional add-ons (not included by default — add per project)
-
-Kept out to stay lean and host-agnostic. Add when a project needs them:
-
-- **MCP servers** (`.mcp.json`) — only the ones you use, e.g. `context7` for docs,
-  Playwright for browser testing. Run `claude mcp add` or create `.mcp.json`.
-- **GitHub Actions** (`.github/workflows/`) — PR-review-on-`@claude`, scheduled
-  quality/dependency-audit jobs. Requires the Claude Code GitHub Action.
-- **Stack-specific skills** — testing patterns, framework conventions, design tokens.
-- **Path-scoped rules** — add `.claude/rules/*.md` as the project grows (see the
-  starter in that directory) instead of growing `CLAUDE.md`.
-- **Code-intelligence plugin** — for typed languages, gives precise symbol nav.
-
-## Why this structure
-
-It mirrors the official Claude Code best practices (lean `CLAUDE.md`, skills-first,
-hooks for guarantees, subagents for isolation, a verification loop) and the
-efficiency philosophy of the
-[ponytail](https://github.com/DietrichGebert/ponytail) and
-[andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills)
-projects. Everything is documented so you can prune it with confidence per project.
+[MIT](LICENSE) (c) Kyle Sullivan. Cavalry's Web Player runtime and Adobe's `CSInterface.js` are
+third-party and keep their own terms.

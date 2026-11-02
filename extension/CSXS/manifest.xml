@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtensionManifest Version="6.0" ExtensionBundleId="studio.bridge.cavalry" ExtensionBundleVersion="0.1.0"
+    ExtensionBundleName="Cavalry Bridge" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ExtensionList>
+    <Extension Id="studio.bridge.cavalry.panel" Version="0.1.0" />
+  </ExtensionList>
+  <ExecutionEnvironment>
+    <HostList>
+      <!-- After Effects 2024/2025/2026 -->
+      <Host Name="AEFT" Version="[24.0,99.9]" />
+    </HostList>
+    <LocaleList>
+      <Locale Code="All" />
+    </LocaleList>
+    <RequiredRuntimeList>
+      <RequiredRuntime Name="CSXS" Version="12.0" />
+    </RequiredRuntimeList>
+  </ExecutionEnvironment>
+  <DispatchInfoList>
+    <Extension Id="studio.bridge.cavalry.panel">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./index.html</MainPath>
+          <ScriptPath>./jsx/ae.jsx</ScriptPath>
+          <CEFCommandLine>
+            <!-- Web Player WASM/WebGL needs these; harmless otherwise -->
+            <Parameter>--enable-nodejs</Parameter>
+            <Parameter>--mixed-context</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>true</AutoVisible>
+        </Lifecycle>
+        <UI>
+          <Type>Panel</Type>
+          <Menu>Cavalry Bridge</Menu>
+          <Geometry>
+            <Size><Height>600</Height><Width>420</Width></Size>
+            <MinSize><Height>300</Height><Width>320</Width></MinSize>
+          </Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+  </DispatchInfoList>
+</ExtensionManifest>
